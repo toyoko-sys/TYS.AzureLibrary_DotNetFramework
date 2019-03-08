@@ -24,7 +24,12 @@ namespace TYS.AzureLibrary
         /// <param name="fileName"></param>
         /// <param name="fileStream"></param>
         /// <returns></returns>
-        public static async Task<bool> UploadFileToStorage(string accountName, string accountKey, string containerName, string fileName, Stream fileStream)
+        /// <remarks>
+        /// 層を指定してアップロードすることが出来ない。
+        /// アップロード後に層を設定する or コンテナの既定の層を変更する(Azure Portal)
+        /// 本メソッドによる方法は、既定の層に置いてある時間分のコスト＋層移動のコストがかかるので注意
+        /// </remarks>
+        public static async Task<bool> UploadStreamAsync(string accountName, string accountKey, string containerName, string fileName, Stream fileStream, StandardBlobTier standardBlobTier = StandardBlobTier.Unknown)
         {
             // blobコンテナへの参照を取得する
             var container = GetContainerReference(accountName, accountKey, containerName);
@@ -39,6 +44,12 @@ namespace TYS.AzureLibrary
             // ファイルをアップロードする
             await blockBlob.UploadFromStreamAsync(fileStream);
 
+            // 指定があれば層を設定
+            if (standardBlobTier != StandardBlobTier.Unknown)
+            {
+                await blockBlob.SetStandardBlobTierAsync(standardBlobTier);
+            }
+
             return await Task.FromResult(true);
         }
 
@@ -50,7 +61,7 @@ namespace TYS.AzureLibrary
         /// <param name="containerName"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static async Task<Stream> DownloadFileFromStorage(string accountName, string accountKey, string containerName, string fileName)
+        public static async Task<Stream> DownloadStreamAsync(string accountName, string accountKey, string containerName, string fileName)
         {
             // blobコンテナへの参照を取得する
             var container = GetContainerReference(accountName, accountKey, containerName);
@@ -65,20 +76,65 @@ namespace TYS.AzureLibrary
         }
 
         /// <summary>
+        /// 層変更
+        /// </summary>
+        /// <param name="accountName"></param>
+        /// <param name="accountKey"></param>
+        /// <param name="containerName"></param>
+        /// <param name="fileName"></param>
+        /// <param name="standardBlobTier"></param>
+        /// <returns></returns>
+        public static async Task<bool> SetStandardBlobTierAsync(string accountName, string accountKey, string containerName, string fileName, StandardBlobTier standardBlobTier)
+        {
+            // blobコンテナへの参照を取得する
+            var container = GetContainerReference(accountName, accountKey, containerName);
+
+            // コンテナからblobブロックの参照を取得する
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
+
+            // 層変更
+            await blockBlob.SetStandardBlobTierAsync(standardBlobTier);
+
+            return await Task.FromResult(true);
+        }
+
+        /// <summary>
+        /// プロパティ取得
+        /// </summary>
+        /// <param name="accountName"></param>
+        /// <param name="accountKey"></param>
+        /// <param name="containerName"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public static async Task<BlobProperties> GetBlobPropertiesAsync(string accountName, string accountKey, string containerName, string fileName)
+        {
+            // blobコンテナへの参照を取得する
+            var container = GetContainerReference(accountName, accountKey, containerName);
+
+            // コンテナからblobブロックの参照を取得する
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
+
+            await blockBlob.FetchAttributesAsync();
+
+            return await Task.FromResult(blockBlob.Properties);
+        }
+
+        /// <summary>
         /// コンテナ存在チェック
         /// </summary>
         /// <param name="accountName"></param>
         /// <param name="accountKey"></param>
         /// <param name="containerName"></param>
         /// <returns></returns>
-        public static async Task<bool> ContainerExists(string accountName, string accountKey, string containerName)
+        public static async Task<bool> ContainerExistsAsync(string accountName, string accountKey, string containerName)
         {
             // blobコンテナへの参照を取得する
             var container = GetContainerReference(accountName, accountKey, containerName);
 
             // blobコンテナの存在チェック
             var containerExists = await container.ExistsAsync();
-            return containerExists;
+
+            return await Task.FromResult(containerExists);
         }
 
         /// <summary>
@@ -89,7 +145,7 @@ namespace TYS.AzureLibrary
         /// <param name="containerName"></param>
         /// <param name="blobName"></param>
         /// <returns></returns>
-        public static async Task<bool> BlockBlobExists(string accountName, string accountKey, string containerName, string blobName)
+        public static async Task<bool> BlockBlobExistsAsync(string accountName, string accountKey, string containerName, string blobName)
         {
             // blobコンテナへの参照を取得する
             var container = GetContainerReference(accountName, accountKey, containerName);
@@ -100,7 +156,7 @@ namespace TYS.AzureLibrary
             // blobブロックの存在チェック
             var blockBlobExists = await blockBlob.ExistsAsync();
 
-            return blockBlobExists;
+            return await Task.FromResult(blockBlobExists);
         }
 
         /// <summary>
@@ -131,9 +187,17 @@ namespace TYS.AzureLibrary
                     blobNameList.Add(blob.Name);
                 }
             }
+
             return blobNameList;
         }
 
+        /// <summary>
+        /// Blobコンテナへの参照
+        /// </summary>
+        /// <param name="accountName"></param>
+        /// <param name="accountKey"></param>
+        /// <param name="containerName"></param>
+        /// <returns></returns>
         private static CloudBlobContainer GetContainerReference(string accountName, string accountKey, string containerName)
         {
             // storagecredentials オブジェクトを作成する
