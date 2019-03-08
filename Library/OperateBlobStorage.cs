@@ -61,7 +61,7 @@ namespace TYS.AzureLibrary
         /// <param name="containerName"></param>
         /// <param name="fileName"></param>
         /// <returns></returns>
-        public static async Task<Stream> DownloadFileAsync(string accountName, string accountKey, string containerName, string fileName)
+        public static async Task<Stream> DownloadStreamAsync(string accountName, string accountKey, string containerName, string fileName)
         {
             // blobコンテナへの参照を取得する
             var container = GetContainerReference(accountName, accountKey, containerName);
