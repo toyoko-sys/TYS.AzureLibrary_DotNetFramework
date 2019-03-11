@@ -21,15 +21,17 @@ namespace TYS.AzureLibrary
         /// <param name="accountName"></param>
         /// <param name="accountKey"></param>
         /// <param name="containerName"></param>
-        /// <param name="fileName"></param>
-        /// <param name="fileStream"></param>
+        /// <param name="blobName"></param>
+        /// <param name="stream"></param>
+        /// <param name="standardBlobTier"></param>
+        /// <param name="shouldBlobDelete"></param>
         /// <returns></returns>
         /// <remarks>
         /// 層を指定してアップロードすることが出来ない。
         /// アップロード後に層を設定する or コンテナの既定の層を変更する(Azure Portal)
         /// 本メソッドによる方法は、既定の層に置いてある時間分のコスト＋層移動のコストがかかるので注意
         /// </remarks>
-        public static async Task<bool> UploadStreamAsync(string accountName, string accountKey, string containerName, string fileName, Stream fileStream, StandardBlobTier standardBlobTier = StandardBlobTier.Unknown)
+        public static async Task<bool> UploadStreamAsync(string accountName, string accountKey, string containerName, string blobName, Stream stream, StandardBlobTier standardBlobTier = StandardBlobTier.Unknown, bool shouldBlobDelete = false)
         {
             // blobコンテナへの参照を取得する
             var container = GetContainerReference(accountName, accountKey, containerName);
@@ -39,10 +41,16 @@ namespace TYS.AzureLibrary
 
             // コンテナからblobブロックの参照を取得する
             // フォルダ階層ありのアップロードを行う場合、blobNameを「folder/image.jpg」のようにする
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
+
+            // 指定があれば既存のBlobを削除
+            if (shouldBlobDelete)
+            {
+                await blockBlob.DeleteIfExistsAsync();
+            }
 
             // ファイルをアップロードする
-            await blockBlob.UploadFromStreamAsync(fileStream);
+            await blockBlob.UploadFromStreamAsync(stream);
 
             // 指定があれば層を設定
             if (standardBlobTier != StandardBlobTier.Unknown)
@@ -59,20 +67,20 @@ namespace TYS.AzureLibrary
         /// <param name="accountName"></param>
         /// <param name="accountKey"></param>
         /// <param name="containerName"></param>
-        /// <param name="fileName"></param>
+        /// <param name="blobName"></param>
         /// <returns></returns>
-        public static async Task<Stream> DownloadStreamAsync(string accountName, string accountKey, string containerName, string fileName)
+        public static async Task<MemoryStream> DownloadStreamAsync(string accountName, string accountKey, string containerName, string blobName)
         {
             // blobコンテナへの参照を取得する
             var container = GetContainerReference(accountName, accountKey, containerName);
 
             // コンテナからblobブロックの参照を取得する
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
 
             var stream = new MemoryStream();
             await blockBlob.DownloadToStreamAsync(stream);
 
-            return await Task.FromResult((Stream)stream);
+            return await Task.FromResult(stream);
         }
 
         /// <summary>
@@ -81,16 +89,16 @@ namespace TYS.AzureLibrary
         /// <param name="accountName"></param>
         /// <param name="accountKey"></param>
         /// <param name="containerName"></param>
-        /// <param name="fileName"></param>
+        /// <param name="blobName"></param>
         /// <param name="standardBlobTier"></param>
         /// <returns></returns>
-        public static async Task<bool> SetStandardBlobTierAsync(string accountName, string accountKey, string containerName, string fileName, StandardBlobTier standardBlobTier)
+        public static async Task<bool> SetStandardBlobTierAsync(string accountName, string accountKey, string containerName, string blobName, StandardBlobTier standardBlobTier)
         {
             // blobコンテナへの参照を取得する
             var container = GetContainerReference(accountName, accountKey, containerName);
 
             // コンテナからblobブロックの参照を取得する
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
 
             // 層変更
             await blockBlob.SetStandardBlobTierAsync(standardBlobTier);
@@ -104,15 +112,15 @@ namespace TYS.AzureLibrary
         /// <param name="accountName"></param>
         /// <param name="accountKey"></param>
         /// <param name="containerName"></param>
-        /// <param name="fileName"></param>
+        /// <param name="blobName"></param>
         /// <returns></returns>
-        public static async Task<BlobProperties> GetBlobPropertiesAsync(string accountName, string accountKey, string containerName, string fileName)
+        public static async Task<BlobProperties> GetBlobPropertiesAsync(string accountName, string accountKey, string containerName, string blobName)
         {
             // blobコンテナへの参照を取得する
             var container = GetContainerReference(accountName, accountKey, containerName);
 
             // コンテナからblobブロックの参照を取得する
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
 
             await blockBlob.FetchAttributesAsync();
 
