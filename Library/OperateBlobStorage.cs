@@ -79,6 +79,7 @@ namespace TYS.AzureLibrary
 
             var stream = new MemoryStream();
             await blockBlob.DownloadToStreamAsync(stream);
+            stream.Seek(0, SeekOrigin.Begin);
 
             return await Task.FromResult(stream);
         }
