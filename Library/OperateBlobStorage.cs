@@ -18,8 +18,7 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// アップロード
         /// </summary>
-        /// <param name="accountName"></param>
-        /// <param name="accountKey"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="containerName"></param>
         /// <param name="blobName"></param>
         /// <param name="stream"></param>
@@ -31,10 +30,10 @@ namespace TYS.AzureLibrary
         /// アップロード後に層を設定する or コンテナの既定の層を変更する(Azure Portal)
         /// 本メソッドによる方法は、既定の層に置いてある時間分のコスト＋層移動のコストがかかるので注意
         /// </remarks>
-        public static async Task<bool> UploadStreamAsync(string accountName, string accountKey, string containerName, string blobName, Stream stream, StandardBlobTier standardBlobTier = StandardBlobTier.Unknown, bool shouldBlobDelete = false)
+        public static async Task<bool> UploadStreamAsync(CloudStorageAccount storageAccount, string containerName, string blobName, Stream stream, StandardBlobTier standardBlobTier = StandardBlobTier.Unknown, bool shouldBlobDelete = false)
         {
             // blobコンテナへの参照を取得する
-            var container = GetContainerReference(accountName, accountKey, containerName);
+            var container = GetContainerReference(storageAccount, containerName);
 
             // コンテナが存在しない場合作成する
             container.CreateIfNotExists();
@@ -64,15 +63,14 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// ダウンロード
         /// </summary>
-        /// <param name="accountName"></param>
-        /// <param name="accountKey"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="containerName"></param>
         /// <param name="blobName"></param>
         /// <returns></returns>
-        public static async Task<MemoryStream> DownloadStreamAsync(string accountName, string accountKey, string containerName, string blobName)
+        public static async Task<MemoryStream> DownloadStreamAsync(CloudStorageAccount storageAccount, string containerName, string blobName)
         {
             // blobコンテナへの参照を取得する
-            var container = GetContainerReference(accountName, accountKey, containerName);
+            var container = GetContainerReference(storageAccount, containerName);
 
             // コンテナからblobブロックの参照を取得する
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
@@ -87,16 +85,15 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// 層変更
         /// </summary>
-        /// <param name="accountName"></param>
-        /// <param name="accountKey"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="containerName"></param>
         /// <param name="blobName"></param>
         /// <param name="standardBlobTier"></param>
         /// <returns></returns>
-        public static async Task<bool> SetStandardBlobTierAsync(string accountName, string accountKey, string containerName, string blobName, StandardBlobTier standardBlobTier)
+        public static async Task<bool> SetStandardBlobTierAsync(CloudStorageAccount storageAccount, string containerName, string blobName, StandardBlobTier standardBlobTier)
         {
             // blobコンテナへの参照を取得する
-            var container = GetContainerReference(accountName, accountKey, containerName);
+            var container = GetContainerReference(storageAccount, containerName);
 
             // コンテナからblobブロックの参照を取得する
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
@@ -110,15 +107,14 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// プロパティ取得
         /// </summary>
-        /// <param name="accountName"></param>
-        /// <param name="accountKey"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="containerName"></param>
         /// <param name="blobName"></param>
         /// <returns></returns>
-        public static async Task<BlobProperties> GetBlobPropertiesAsync(string accountName, string accountKey, string containerName, string blobName)
+        public static async Task<BlobProperties> GetBlobPropertiesAsync(CloudStorageAccount storageAccount, string containerName, string blobName)
         {
             // blobコンテナへの参照を取得する
-            var container = GetContainerReference(accountName, accountKey, containerName);
+            var container = GetContainerReference(storageAccount, containerName);
 
             // コンテナからblobブロックの参照を取得する
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
@@ -131,14 +127,13 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// コンテナ存在チェック
         /// </summary>
-        /// <param name="accountName"></param>
-        /// <param name="accountKey"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="containerName"></param>
         /// <returns></returns>
-        public static async Task<bool> ContainerExistsAsync(string accountName, string accountKey, string containerName)
+        public static async Task<bool> ContainerExistsAsync(CloudStorageAccount storageAccount, string containerName)
         {
             // blobコンテナへの参照を取得する
-            var container = GetContainerReference(accountName, accountKey, containerName);
+            var container = GetContainerReference(storageAccount, containerName);
 
             // blobコンテナの存在チェック
             var containerExists = await container.ExistsAsync();
@@ -149,15 +144,14 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// Blobブロック存在チェック
         /// </summary>
-        /// <param name="accountName"></param>
-        /// <param name="accountKey"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="containerName"></param>
         /// <param name="blobName"></param>
         /// <returns></returns>
-        public static async Task<bool> BlockBlobExistsAsync(string accountName, string accountKey, string containerName, string blobName)
+        public static async Task<bool> BlockBlobExistsAsync(CloudStorageAccount storageAccount, string containerName, string blobName)
         {
             // blobコンテナへの参照を取得する
-            var container = GetContainerReference(accountName, accountKey, containerName);
+            var container = GetContainerReference(storageAccount, containerName);
 
             // コンテナからblobブロックの参照を取得する
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
@@ -171,14 +165,14 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// Blob名の接頭辞検索（提供されている機能による制約）
         /// </summary>
-        /// <param name="storageConfig"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="containerName"></param>
         /// <param name="prefix"></param>
         /// <returns></returns>
-        public static List<string> SearchBlobName(string accountName, string accountKey, string containerName, string prefix)
+        public static List<string> SearchBlobName(CloudStorageAccount storageAccount, string containerName, string prefix)
         {
             // blobコンテナへの参照を取得する
-            var container = GetContainerReference(accountName, accountKey, containerName);
+            var container = GetContainerReference(storageAccount, containerName);
 
             // blobコンテナ内でprefixと部分一致するリストを取得する
             var blobList = container.ListBlobs(prefix, true);
@@ -203,18 +197,11 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// Blobコンテナへの参照
         /// </summary>
-        /// <param name="accountName"></param>
-        /// <param name="accountKey"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="containerName"></param>
         /// <returns></returns>
-        private static CloudBlobContainer GetContainerReference(string accountName, string accountKey, string containerName)
+        private static CloudBlobContainer GetContainerReference(CloudStorageAccount storageAccount, string containerName)
         {
-            // storagecredentials オブジェクトを作成する
-            StorageCredentials storageCredentials = new StorageCredentials(accountName, accountKey);
-
-            // ストレージの資格情報を渡して、cloudstorage account を作成する
-            CloudStorageAccount storageAccount = new CloudStorageAccount(storageCredentials, true);
-
             // blob client を作成
             CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
 

@@ -12,8 +12,7 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// メッセージ追加
         /// </summary>
-        /// <param name="accountName"></param>
-        /// <param name="accountKey"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="queueName"></param>
         /// <param name="message"></param>
         /// <param name="timeToLive"></param>
@@ -24,10 +23,10 @@ namespace TYS.AzureLibrary
         /// デフォルトのQueueの有効期限は7日
         /// 非表示期間の指定は最大7日、それ以上を指定すると例外が発生する
         /// </remarks>
-        public static async Task<bool> AddMessageAsync(string accountName, string accountKey, string queueName, string message, TimeSpan? timeToLive = null, TimeSpan? initialVisibilityDelay = null)
+        public static async Task<bool> AddMessageAsync(CloudStorageAccount storageAccount, string queueName, string message, TimeSpan? timeToLive = null, TimeSpan? initialVisibilityDelay = null)
         {
             // queueへの参照を取得する
-            var queue = GetQueueReference(accountName, accountKey, queueName);
+            var queue = GetQueueReference(storageAccount, queueName);
 
             // queueが存在しない場合作成する
             queue.CreateIfNotExists();
@@ -43,18 +42,11 @@ namespace TYS.AzureLibrary
         /// <summary>
         /// Queueへの参照
         /// </summary>
-        /// <param name="accountName"></param>
-        /// <param name="accountKey"></param>
+        /// <param name="storageAccount"></param>
         /// <param name="queueName"></param>
         /// <returns></returns>
-        private static CloudQueue GetQueueReference(string accountName, string accountKey, string queueName)
+        private static CloudQueue GetQueueReference(CloudStorageAccount storageAccount, string queueName)
         {
-            // storagecredentials オブジェクトを作成する
-            StorageCredentials storageCredentials = new StorageCredentials(accountName, accountKey);
-
-            // ストレージの資格情報を渡して、cloudstorage account を作成する
-            CloudStorageAccount storageAccount = new CloudStorageAccount(storageCredentials, true);
-
             // queue client を作成
             CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
 

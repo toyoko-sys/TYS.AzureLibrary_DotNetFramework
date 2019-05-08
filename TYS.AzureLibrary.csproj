@@ -50,6 +50,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Library\CloudStorageAccountHelper.cs" />
     <Compile Include="Library\OperateBlobStorage.cs" />
     <Compile Include="Library\OperateQueueStorage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
