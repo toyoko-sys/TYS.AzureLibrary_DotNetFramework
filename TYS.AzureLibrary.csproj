@@ -60,4 +60,10 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>REM DLLをPluginの中にコピーするよ
+copy /Y "$(TargetPath)" "$(SolutionDir)\\Plugin"
+copy /Y "$(TargetPath)\..\Microsoft.Azure.KeyVault.Core.dll" "$(SolutionDir)\\Plugin"
+copy /Y "$(TargetPath)\..\Microsoft.WindowsAzure.Storage.dll" "$(SolutionDir)\\Plugin"</PostBuildEvent>
+  </PropertyGroup>
 </Project>
