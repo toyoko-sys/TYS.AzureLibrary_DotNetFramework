@@ -281,5 +281,53 @@ namespace TYS.AzureLibrary
             // blobコンテナへの参照を取得する
             return blobClient.GetContainerReference(containerName);
         }
+
+        /// <summary>
+        /// Blob削除(File単位)
+        /// </summary>
+        /// <param name="storageAccount"></param>
+        /// <param name="containerName"></param>
+        /// <param name="blobName"></param>
+        /// <returns></returns>
+        public static async Task<bool> DeleteBlobFileAsync(CloudStorageAccount storageAccount, string containerName, string blobFileName)
+        {
+            // blobコンテナへの参照を取得する
+            var container = GetContainerReference(storageAccount, containerName);
+
+            // コンテナからblobブロックの参照を取得する
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobFileName);
+
+            // Blobを削除
+            await blockBlob.DeleteIfExistsAsync();
+
+            return await Task.FromResult(true);
+        }
+
+        /// <summary>
+        /// Blob削除(Directory単位)
+        /// </summary>
+        /// <param name="storageAccount"></param>
+        /// <param name="containerName"></param>
+        /// <param name="blobName"></param>
+        /// <returns></returns>
+        public static async Task<bool> DeleteBlobDirectoryAsync(CloudStorageAccount storageAccount, string containerName, string blobDirectoryName)
+        {
+            // blobコンテナへの参照を取得する
+            var container = GetContainerReference(storageAccount, containerName);
+
+            // コンテナ内から、blobDirectoryNameが含まれるBlobをリストアップする
+            // blobDirectoryNameはフォルダ部分のみの指定とする。
+            // 例：「folder/image.jpg」のフォルダごと削除 → 「folder」
+            foreach (IListBlobItem blob in container.GetDirectoryReference(blobDirectoryName).ListBlobs(true))
+            {
+                if (blob.GetType() == typeof(CloudBlob) || blob.GetType().BaseType == typeof(CloudBlob))
+                {
+                    // Blobを削除
+                    await ((CloudBlob)blob).DeleteIfExistsAsync();
+                }
+            }
+
+            return await Task.FromResult(true);
+        }
     }
 }
